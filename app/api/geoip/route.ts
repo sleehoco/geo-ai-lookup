@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-export async function GET(_request: Request) {
+export async function GET() {
     try {
         // In a real production app, we would check 'x-forwarded-for' headers
         // to get the real client IP. For this demo/local, we'll just hit the API
