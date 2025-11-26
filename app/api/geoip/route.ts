@@ -5,12 +5,17 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        // In a real production app, we would check 'x-forwarded-for' headers
-        // to get the real client IP. For this demo/local, we'll just hit the API
-        // which will see our request IP.
+        // Using ipgeolocation.io for reliable geolocation
+        const apiKey = process.env.IPGEOLOCATION_API_KEY;
 
-        // Using ipapi.co for demo purposes (free tier, rate limited)
-        const response = await fetch('https://ipapi.co/json/');
+        if (!apiKey) {
+            return NextResponse.json(
+                { error: 'GeoIP API key not configured' },
+                { status: 500 }
+            );
+        }
+
+        const response = await fetch(`https://api.ipgeolocation.io/ipgeo?apiKey=${apiKey}`);
 
         if (!response.ok) {
             throw new Error('Failed to fetch location data');
@@ -21,7 +26,7 @@ export async function GET() {
         return NextResponse.json({
             ip: data.ip,
             city: data.city,
-            region: data.region,
+            region: data.state_prov,
             country: data.country_name,
             latitude: data.latitude,
             longitude: data.longitude,
