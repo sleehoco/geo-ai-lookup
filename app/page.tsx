@@ -32,12 +32,29 @@ export default function Home() {
   const [summary, setSummary] = useState('');
 
   useEffect(() => {
-    // Fetch location on mount
+    // Check for saved location first
+    const savedLocation = localStorage.getItem('userLocation');
+    const savedSource = localStorage.getItem('locationSource');
+
+    if (savedLocation && savedSource) {
+      try {
+        setLocation(JSON.parse(savedLocation));
+        setLocationSource(savedSource as 'ip' | 'zip' | 'gps');
+        setLoadingLocation(false);
+        return;
+      } catch (error) {
+        console.error('Error loading saved location:', error);
+      }
+    }
+
+    // Fetch location on mount if no saved location
     fetch('/api/geoip')
       .then((res) => res.json())
       .then((data) => {
         setLocation(data);
         setLocationSource('ip');
+        localStorage.setItem('userLocation', JSON.stringify(data));
+        localStorage.setItem('locationSource', 'ip');
         setLoadingLocation(false);
       })
       .catch((err) => {
@@ -59,6 +76,13 @@ export default function Home() {
         ip: data.ip || 'N/A',
       });
       setLocationSource('zip');
+      localStorage.setItem('userLocation', JSON.stringify({
+        city: data.city,
+        region: data.state_prov,
+        country: data.country_name,
+        ip: data.ip || 'N/A',
+      }));
+      localStorage.setItem('locationSource', 'zip');
       setShowLocationModal(false);
     } catch (error) {
       console.error('ZIP lookup error:', error);
@@ -86,6 +110,13 @@ export default function Home() {
             ip: data.ip || 'GPS',
           });
           setLocationSource('gps');
+          localStorage.setItem('userLocation', JSON.stringify({
+            city: data.city,
+            region: data.state_prov,
+            country: data.country_name,
+            ip: data.ip || 'GPS',
+          }));
+          localStorage.setItem('locationSource', 'gps');
           setShowLocationModal(false);
         } catch (error) {
           console.error('GPS lookup error:', error);
