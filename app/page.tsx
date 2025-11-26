@@ -22,6 +22,9 @@ interface SearchResult {
 export default function Home() {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
+  const [locationSource, setLocationSource] = useState<'ip' | 'zip' | 'gps'>('ip');
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [zipInput, setZipInput] = useState('');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -34,6 +37,7 @@ export default function Home() {
       .then((res) => res.json())
       .then((data) => {
         setLocation(data);
+        setLocationSource('ip');
         setLoadingLocation(false);
       })
       .catch((err) => {
@@ -41,6 +45,61 @@ export default function Home() {
         setLoadingLocation(false);
       });
   }, []);
+
+  const handleZipSubmit = async () => {
+    if (!zipInput.trim()) return;
+    setLoadingLocation(true);
+    try {
+      const res = await fetch(`https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.NEXT_PUBLIC_IPGEOLOCATION_API_KEY || ''}&zip=${zipInput}&country=US`);
+      const data = await res.json();
+      setLocation({
+        city: data.city,
+        region: data.state_prov,
+        country: data.country_name,
+        ip: data.ip || 'N/A',
+      });
+      setLocationSource('zip');
+      setShowLocationModal(false);
+    } catch (error) {
+      console.error('ZIP lookup error:', error);
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  const handleGPSLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+    setLoadingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const res = await fetch(`https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.NEXT_PUBLIC_IPGEOLOCATION_API_KEY || ''}&lat=${latitude}&long=${longitude}`);
+          const data = await res.json();
+          setLocation({
+            city: data.city,
+            region: data.state_prov,
+            country: data.country_name,
+            ip: data.ip || 'GPS',
+          });
+          setLocationSource('gps');
+          setShowLocationModal(false);
+        } catch (error) {
+          console.error('GPS lookup error:', error);
+        } finally {
+          setLoadingLocation(false);
+        }
+      },
+      (error) => {
+        console.error('GPS error:', error);
+        alert('Unable to get your location. Please try ZIP code instead.');
+        setLoadingLocation(false);
+      }
+    );
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,9 +146,20 @@ export default function Home() {
               <span className="animate-pulse">●</span> Detecting Location...
             </span>
           ) : location ? (
-            <span className="flex items-center gap-2 text-green-400">
-              <span className="text-green-500">●</span> {location.city}, {location.region}, {location.country}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-2 text-green-400">
+                <span className="text-green-500">
+                  {locationSource === 'gps' ? '📍' : locationSource === 'zip' ? '📮' : '🌐'}
+                </span>
+                {location.city}, {location.region}, {location.country}
+              </span>
+              <button
+                onClick={() => setShowLocationModal(true)}
+                className="text-xs text-gray-500 hover:text-gray-300 underline"
+              >
+                change
+              </button>
+            </div>
           ) : (
             <span className="text-red-400">Location Unavailable</span>
           )}
@@ -237,6 +307,60 @@ export default function Home() {
           </div>
         ))}
       </div>
+
+      {/* Location Modal */}
+      {showLocationModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-blue-400">Change Location</h3>
+              <button
+                onClick={() => setShowLocationModal(false)}
+                className="text-gray-500 hover:text-white text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* GPS Location */}
+              <button
+                onClick={handleGPSLocation}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+              >
+                <span>📍</span> Use My GPS Location
+              </button>
+
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-px bg-gray-800"></div>
+                <span className="text-gray-500 text-sm">or</span>
+                <div className="flex-1 h-px bg-gray-800"></div>
+              </div>
+
+              {/* ZIP Code */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Enter ZIP Code</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={zipInput}
+                    onChange={(e) => setZipInput(e.target.value)}
+                    placeholder="e.g., 10001"
+                    className="flex-1 bg-gray-800 text-white border border-gray-700 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyPress={(e) => e.key === 'Enter' && handleZipSubmit()}
+                  />
+                  <button
+                    onClick={handleZipSubmit}
+                    className="bg-gray-800 hover:bg-gray-700 text-white px-4 rounded-lg transition-colors"
+                  >
+                    📮 Go
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
