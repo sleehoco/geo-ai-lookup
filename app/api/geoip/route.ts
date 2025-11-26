@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Force dynamic rendering - don't try to pre-render this route at build time
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         // In a real production app, we would check 'x-forwarded-for' headers

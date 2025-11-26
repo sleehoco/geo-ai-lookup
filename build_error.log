@@ -1,0 +1,28 @@
+
+> geo-ai-lookup@0.1.0 build
+> next build
+
+  Γû▓ Next.js 14.2.33
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+eD [Error]: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+    at new nx (C:\Users\sysadmin\Documents\CS\geo-ai-lookup\.next\server\app\api\ai-search\route.js:8:46774)
+    at 8469 (C:\Users\sysadmin\Documents\CS\geo-ai-lookup\.next\server\app\api\ai-search\route.js:8:60595)
+    at t (C:\Users\sysadmin\Documents\CS\geo-ai-lookup\.next\server\webpack-runtime.js:1:127)
+    at s (C:\Users\sysadmin\Documents\CS\geo-ai-lookup\.next\server\app\api\ai-search\route.js:25:1099)
+    at C:\Users\sysadmin\Documents\CS\geo-ai-lookup\.next\server\app\api\ai-search\route.js:25:1130
+    at t.X (C:\Users\sysadmin\Documents\CS\geo-ai-lookup\.next\server\webpack-runtime.js:1:1191)
+    at C:\Users\sysadmin\Documents\CS\geo-ai-lookup\.next\server\app\api\ai-search\route.js:25:1112
+    at Object.<anonymous> (C:\Users\sysadmin\Documents\CS\geo-ai-lookup\.next\server\app\api\ai-search\route.js:25:1157)
+    at Module._compile (node:internal/modules/cjs/loader:1256:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1310:10)
+
+> Build error occurred
+Error: Failed to collect page data for /api/ai-search
+    at C:\Users\sysadmin\Documents\CS\geo-ai-lookup\node_modules\next\dist\build\utils.js:1269:15
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  type: 'Error'
+}
