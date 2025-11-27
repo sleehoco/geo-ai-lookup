@@ -37,15 +37,24 @@ export async function GET(request: Request) {
             const forwardedFor = request.headers.get('x-forwarded-for');
             const realIp = request.headers.get('x-real-ip');
 
+            console.log('GeoIP Debug - Headers:', {
+                forwardedFor,
+                realIp,
+                allHeaders: Object.fromEntries(request.headers.entries())
+            });
+
             // If running on Vercel or behind a proxy, x-forwarded-for is usually the best bet
             // It can be a comma-separated list, the first one is the client
             let userIp = forwardedFor ? forwardedFor.split(',')[0].trim() : realIp;
 
+            // Handle localhost/private IPs
+            if (userIp === '::1' || userIp === '127.0.0.1') {
+                userIp = null;
+            }
+
+            console.log('GeoIP Debug - Detected User IP:', userIp);
+
             // If we have a user IP, pass it to the API
-            // If we don't pass an IP, ipgeolocation.io uses the caller's IP (the server's IP)
-            // We want to avoid using the server's IP if possible, but if we can't find a user IP, 
-            // we might as well let the API detect the caller (which would be the server).
-            // However, for local dev (localhost), we might not have a valid public IP.
             if (userIp) {
                 apiUrl += `&ip=${userIp}`;
             }
