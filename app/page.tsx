@@ -180,17 +180,32 @@ export default function Home() {
         const data = await response.json();
         const reply = data.reply;
 
-        // Speak response
-        const utterance = new SpeechSynthesisUtterance(reply);
-        utterance.rate = 0.95;
-        utterance.pitch = 1;
-        utterance.volume = 1;
+        // Get natural voice from ElevenLabs
+        const ttsResponse = await fetch('/api/text-to-speech', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: reply })
+        });
 
-        utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
+        if (!ttsResponse.ok) {
+          throw new Error('Failed to generate speech');
+        }
 
-        window.speechSynthesis.speak(utterance);
+        const audioBlob = await ttsResponse.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+
+        audio.onplay = () => setIsSpeaking(true);
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+
+        audio.play();
 
         // Update conversation history
         setConversationHistory(prev => [...prev, `User: ${transcript}`, `Assistant: ${reply}`]);
