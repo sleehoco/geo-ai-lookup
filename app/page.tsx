@@ -38,6 +38,32 @@ export default function Home() {
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
   const [voiceSupported, setVoiceSupported] = useState(false);
 
+  // Access Code State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [accessCodeInput, setAccessCodeInput] = useState('');
+  const [authError, setAuthError] = useState('');
+
+  useEffect(() => {
+    // Check if already authenticated
+    const auth = localStorage.getItem('is_authenticated');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleAuthSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const correctCode = process.env.NEXT_PUBLIC_ACCESS_CODE;
+
+    if (accessCodeInput === correctCode) {
+      setIsAuthenticated(true);
+      localStorage.setItem('is_authenticated', 'true');
+      setAuthError('');
+    } else {
+      setAuthError('Incorrect access code. Please try again.');
+    }
+  };
+
   useEffect(() => {
     // Check for saved location first
     const savedLocation = localStorage.getItem('userLocation');
@@ -346,10 +372,65 @@ export default function Home() {
       setSummary(data.summary || '');
     } catch (error) {
       console.error('Search error:', error);
-    } finally {
       setSearching(false);
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-gray-900/50 p-8 rounded-2xl border border-gray-800 backdrop-blur-xl">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+              GeoAI Lookup
+            </h1>
+            <p className="text-gray-400">Access Required</p>
+          </div>
+
+          <form onSubmit={handleAuthSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="access-code" className="block text-sm font-medium text-gray-300 mb-2">
+                Enter Access Code
+              </label>
+              <input
+                id="access-code"
+                type="password"
+                value={accessCodeInput}
+                onChange={(e) => setAccessCodeInput(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                placeholder="••••••••"
+              />
+            </div>
+
+            {authError && (
+              <div className="text-red-400 text-sm text-center bg-red-900/20 p-3 rounded-lg border border-red-900/50">
+                {authError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-blue-500/25"
+            >
+              Enter
+            </button>
+
+            <div className="text-center pt-4 border-t border-gray-800">
+              <p className="text-sm text-gray-500">
+                Need an access code?
+              </p>
+              <a
+                href="mailto:information@cesiumcyber.com"
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Email information@cesiumcyber.com
+              </a>
+            </div>
+          </form>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center p-8 md:p-24 bg-black text-white selection:bg-purple-500 selection:text-white">
