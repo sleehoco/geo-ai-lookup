@@ -85,6 +85,11 @@ export async function GET(request: Request) {
             country: data.country_name,
             latitude: data.latitude,
             longitude: data.longitude,
+            debug: {
+                receivedParams: { lat, long, zip },
+                detectedUserIp: userIp,
+                upstreamUrl: apiUrl.replace(apiKey, 'REDACTED')
+            }
         });
     } catch (error: any) {
         console.error('GeoIP Error:', error);
