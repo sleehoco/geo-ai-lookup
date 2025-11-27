@@ -32,6 +32,12 @@ export default function Home() {
   const [aiContext, setAiContext] = useState('');
   const [summary, setSummary] = useState('');
 
+  // Voice conversation state
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState<string[]>([]);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+
   useEffect(() => {
     // Check for saved location first
     const savedLocation = localStorage.getItem('userLocation');
@@ -105,6 +111,98 @@ export default function Home() {
         });
     }
   }, []);
+
+  // Check for voice support
+  useEffect(() => {
+    const checkVoiceSupport = () => {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const speechSynthesis = window.speechSynthesis;
+      setVoiceSupported(!!SpeechRecognition && !!speechSynthesis);
+    };
+    checkVoiceSupport();
+  }, []);
+
+  const startVoiceConversation = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Voice recognition is not supported in your browser. Try Chrome or Edge.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+      if (event.error === 'no-speech') {
+        alert('No speech detected. Please try again.');
+      }
+    };
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      console.log('User said:', transcript);
+
+      try {
+        // Send to AI
+        const response = await fetch('/api/voice-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: transcript,
+            searchResults: results,
+            conversationHistory: conversationHistory.slice(-6) // Keep last 3 exchanges
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to get AI response');
+        }
+
+        const data = await response.json();
+        const reply = data.reply;
+
+        // Speak response
+        const utterance = new SpeechSynthesisUtterance(reply);
+        utterance.rate = 0.95;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        window.speechSynthesis.speak(utterance);
+
+        // Update conversation history
+        setConversationHistory(prev => [...prev, `User: ${transcript}`, `Assistant: ${reply}`]);
+
+      } catch (error) {
+        console.error('Voice conversation error:', error);
+        setIsListening(false);
+        setIsSpeaking(false);
+      }
+    };
+
+    recognition.start();
+  };
+
+  const stopSpeaking = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
 
   const handleZipSubmit = async () => {
     if (!zipInput.trim()) return;
@@ -294,6 +392,46 @@ export default function Home() {
               {/* Display the summary state */}
               {summary || "Here are the top results for your search."}
             </p>
+          </div>
+        )}
+
+        {/* Voice Conversation Button */}
+        {results.length > 0 && voiceSupported && (
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={isSpeaking ? stopSpeaking : startVoiceConversation}
+              disabled={isListening}
+              className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${isListening
+                  ? 'bg-red-600 text-white cursor-wait animate-pulse'
+                  : isSpeaking
+                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
+                }`}
+            >
+              {isListening ? (
+                <>
+                  <svg className="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                  </svg>
+                  Listening...
+                </>
+              ) : isSpeaking ? (
+                <>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Stop Speaking
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+                  </svg>
+                  Ask AI About Results
+                </>
+              )}
+            </button>
           </div>
         )}
       </div>
