@@ -180,32 +180,48 @@ export default function Home() {
         const data = await response.json();
         const reply = data.reply;
 
-        // Get natural voice from ElevenLabs
-        const ttsResponse = await fetch('/api/text-to-speech', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: reply })
-        });
+        // Try to get natural voice from ElevenLabs, fallback to Web Speech if it fails
+        try {
+          const ttsResponse = await fetch('/api/text-to-speech', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: reply })
+          });
 
-        if (!ttsResponse.ok) {
-          throw new Error('Failed to generate speech');
+          if (!ttsResponse.ok) {
+            console.error('ElevenLabs TTS failed:', await ttsResponse.text());
+            throw new Error('ElevenLabs failed, using fallback');
+          }
+
+          const audioBlob = await ttsResponse.blob();
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+
+          audio.onplay = () => setIsSpeaking(true);
+          audio.onended = () => {
+            setIsSpeaking(false);
+            URL.revokeObjectURL(audioUrl);
+          };
+          audio.onerror = (e) => {
+            console.error('Audio playback error:', e);
+            setIsSpeaking(false);
+            URL.revokeObjectURL(audioUrl);
+            // Fallback to Web Speech
+            const utterance = new SpeechSynthesisUtterance(reply);
+            utterance.onend = () => setIsSpeaking(false);
+            window.speechSynthesis.speak(utterance);
+          };
+
+          await audio.play();
+        } catch (ttsError) {
+          // Fallback to Web Speech API
+          console.warn('Using Web Speech API fallback:', ttsError);
+          const utterance = new SpeechSynthesisUtterance(reply);
+          utterance.rate = 0.95;
+          utterance.onstart = () => setIsSpeaking(true);
+          utterance.onend = () => setIsSpeaking(false);
+          window.speechSynthesis.speak(utterance);
         }
-
-        const audioBlob = await ttsResponse.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-
-        audio.onplay = () => setIsSpeaking(true);
-        audio.onended = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
-        };
-        audio.onerror = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
-        };
-
-        audio.play();
 
         // Update conversation history
         setConversationHistory(prev => [...prev, `User: ${transcript}`, `Assistant: ${reply}`]);
