@@ -48,27 +48,64 @@ export default function Home() {
     }
 
     // Fetch location on mount if no saved location
-    fetch('/api/geoip')
-      .then((res) => res.json())
-      .then((data) => {
-        setLocation(data);
-        setLocationSource('ip');
-        localStorage.setItem('userLocation', JSON.stringify(data));
-        localStorage.setItem('locationSource', 'ip');
-        setLoadingLocation(false);
-      })
-      .catch((err) => {
-        console.error('Location fetch error:', err);
-        setLoadingLocation(false);
-      });
+    if (!savedLocation) {
+      // Try to get GPS location first
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            fetch(`/api/geoip?lat=${latitude}&long=${longitude}`)
+              .then((res) => res.json())
+              .then((data) => {
+                setLocation(data);
+                setLocationSource('gps');
+                localStorage.setItem('userLocation', JSON.stringify(data));
+                localStorage.setItem('locationSource', 'gps');
+                setLoadingLocation(false);
+              })
+              .catch((err) => {
+                console.error('GPS backend fetch error:', err);
+                // Fallback to IP if backend GPS fails
+                fetchIPLocation();
+              });
+          },
+          (error) => {
+            console.log('GPS permission denied or error, falling back to IP:', error);
+            fetchIPLocation();
+          },
+          { timeout: 5000 } // 5s timeout for GPS
+        );
+      } else {
+        fetchIPLocation();
+      }
+    }
+
+    function fetchIPLocation() {
+      fetch('/api/geoip')
+        .then((res) => res.json())
+        .then((data) => {
+          setLocation(data);
+          setLocationSource('ip');
+          localStorage.setItem('userLocation', JSON.stringify(data));
+          localStorage.setItem('locationSource', 'ip');
+          setLoadingLocation(false);
+        })
+        .catch((err) => {
+          console.error('Location fetch error:', err);
+          setLoadingLocation(false);
+        });
+    }
   }, []);
 
   const handleZipSubmit = async () => {
     if (!zipInput.trim()) return;
     setLoadingLocation(true);
     try {
-      const res = await fetch(`https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.NEXT_PUBLIC_IPGEOLOCATION_API_KEY || ''}&zip=${zipInput}&country=US`);
+      const res = await fetch(`/api/geoip?zip=${zipInput}`);
       const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+
       setLocation({
         city: data.city,
         region: data.state_prov,
@@ -86,6 +123,7 @@ export default function Home() {
       setShowLocationModal(false);
     } catch (error) {
       console.error('ZIP lookup error:', error);
+      alert('Failed to find location for this ZIP code.');
     } finally {
       setLoadingLocation(false);
     }
@@ -101,8 +139,11 @@ export default function Home() {
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          const res = await fetch(`https://api.ipgeolocation.io/ipgeo?apiKey=${process.env.NEXT_PUBLIC_IPGEOLOCATION_API_KEY || ''}&lat=${latitude}&long=${longitude}`);
+          const res = await fetch(`/api/geoip?lat=${latitude}&long=${longitude}`);
           const data = await res.json();
+
+          if (data.error) throw new Error(data.error);
+
           setLocation({
             city: data.city,
             region: data.state_prov,
@@ -120,6 +161,7 @@ export default function Home() {
           setShowLocationModal(false);
         } catch (error) {
           console.error('GPS lookup error:', error);
+          alert('Failed to get location from GPS coordinates.');
         } finally {
           setLoadingLocation(false);
         }
