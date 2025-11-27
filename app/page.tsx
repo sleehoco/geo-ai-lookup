@@ -39,10 +39,11 @@ export default function Home() {
 
     if (savedLocation && savedSource) {
       try {
-        setLocation(JSON.parse(savedLocation));
+        const parsed = JSON.parse(savedLocation);
+        setLocation(parsed);
         setLocationSource(savedSource as 'ip' | 'zip' | 'gps');
         setLoadingLocation(false);
-        return;
+        // Don't return here - continue to fetch fresh data for debugging
       } catch (error) {
         console.error('Error loading saved location:', error);
       }
