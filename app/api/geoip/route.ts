@@ -63,7 +63,9 @@ export async function GET(request: Request) {
         const response = await fetch(apiUrl);
 
         if (!response.ok) {
-            throw new Error('Failed to fetch location data');
+            const errorText = await response.text();
+            console.error('GeoIP Upstream Error:', errorText);
+            throw new Error(`Upstream API failed: ${response.status} ${errorText}`);
         }
 
         const data = await response.json();

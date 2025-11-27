@@ -21,6 +21,7 @@ interface SearchResult {
 
 export default function Home() {
   const [location, setLocation] = useState<LocationData | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [locationSource, setLocationSource] = useState<'ip' | 'zip' | 'gps'>('ip');
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -57,6 +58,9 @@ export default function Home() {
             fetch(`/api/geoip?lat=${latitude}&long=${longitude}`)
               .then((res) => res.json())
               .then((data) => {
+                if (data.error) {
+                  throw new Error(data.error);
+                }
                 setLocation(data);
                 setLocationSource('gps');
                 localStorage.setItem('userLocation', JSON.stringify(data));
@@ -84,6 +88,9 @@ export default function Home() {
       fetch('/api/geoip')
         .then((res) => res.json())
         .then((data) => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
           setLocation(data);
           setLocationSource('ip');
           localStorage.setItem('userLocation', JSON.stringify(data));
@@ -92,6 +99,7 @@ export default function Home() {
         })
         .catch((err) => {
           console.error('Location fetch error:', err);
+          setError(err.message || 'Failed to detect location');
           setLoadingLocation(false);
         });
     }
@@ -233,6 +241,10 @@ export default function Home() {
                 change
               </button>
             </div>
+          ) : error ? (
+            <span className="text-red-400 flex items-center gap-2">
+              <span>⚠️</span> {error}
+            </span>
           ) : (
             <span className="text-red-400">Location Unavailable</span>
           )}
