@@ -446,6 +446,27 @@ export default function Home() {
           </div>
         </div>
       )}
+      {/* Debug Info - Temporary */}
+      <div className="fixed bottom-4 right-4 p-4 bg-black/80 border border-gray-800 rounded-lg text-xs font-mono text-gray-400 max-w-xs overflow-auto z-50">
+        <h4 className="text-white font-bold mb-2">Debug Info</h4>
+        <pre>{JSON.stringify({
+          location,
+          error,
+          loading: loadingLocation,
+          source: locationSource,
+          saved: typeof window !== 'undefined' ? localStorage.getItem('userLocation') : 'N/A'
+        }, null, 2)}</pre>
+        <button
+          onClick={() => {
+            localStorage.removeItem('userLocation');
+            localStorage.removeItem('locationSource');
+            window.location.reload();
+          }}
+          className="mt-2 bg-red-900/50 hover:bg-red-900 text-red-200 px-2 py-1 rounded w-full"
+        >
+          Clear Storage & Reload
+        </button>
+      </div>
     </main>
   );
 }
