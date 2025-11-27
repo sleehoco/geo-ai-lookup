@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
         const completion = await openai.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
-            model: "moonshotai/Kimi-K2-Instruct-0905",
+            model: "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             response_format: { type: "json_object" },
         });
 
