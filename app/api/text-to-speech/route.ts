@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ElevenLabsClient } from 'elevenlabs';
+import { ElevenLabsClient } from 'elevenlabs-js';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,22 +14,22 @@ export async function POST(request: Request) {
             );
         }
 
-        const elevenlabs = new ElevenLabsClient({
+        const client = new ElevenLabsClient({
             apiKey: process.env.ELEVENLABS_API_KEY
         });
 
         // Generate speech using ElevenLabs
-        const audio = await elevenlabs.generate({
-            voice: "Rachel", // Natural, friendly female voice
+        const audioStream = await client.textToSpeech.convert("Rachel", {
             text: text,
-            model_id: "eleven_turbo_v2" // Fast, high quality model
+            model_id: "eleven_turbo_v2"
         });
 
-        // Convert audio stream to buffer
-        const chunks: Buffer[] = [];
-        for await (const chunk of audio) {
+        // Convert stream to buffer
+        const chunks: Uint8Array[] = [];
+        for await (const chunk of audioStream) {
             chunks.push(chunk);
         }
+
         const buffer = Buffer.concat(chunks);
 
         return new NextResponse(buffer, {
