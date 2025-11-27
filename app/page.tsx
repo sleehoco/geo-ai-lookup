@@ -115,7 +115,9 @@ export default function Home() {
   // Check for voice support
   useEffect(() => {
     const checkVoiceSupport = () => {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const win = window as any;
+      const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
       const speechSynthesis = window.speechSynthesis;
       setVoiceSupported(!!SpeechRecognition && !!speechSynthesis);
     };
@@ -123,7 +125,9 @@ export default function Home() {
   }, []);
 
   const startVoiceConversation = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any;
+    const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       alert('Voice recognition is not supported in your browser. Try Chrome or Edge.');
@@ -143,6 +147,7 @@ export default function Home() {
       setIsListening(false);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
       setIsListening(false);
@@ -151,6 +156,7 @@ export default function Home() {
       }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = async (event: any) => {
       const transcript = event.results[0][0].transcript;
       console.log('User said:', transcript);
@@ -402,10 +408,10 @@ export default function Home() {
               onClick={isSpeaking ? stopSpeaking : startVoiceConversation}
               disabled={isListening}
               className={`flex items-center gap-3 px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${isListening
-                  ? 'bg-red-600 text-white cursor-wait animate-pulse'
-                  : isSpeaking
-                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
+                ? 'bg-red-600 text-white cursor-wait animate-pulse'
+                : isSpeaking
+                  ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                  : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl'
                 }`}
             >
               {isListening ? (

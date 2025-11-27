@@ -4,6 +4,14 @@ import OpenAI from 'openai';
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
+interface SearchResult {
+    title: string;
+    description: string;
+    address: string;
+    rating: number;
+    price?: string;
+}
+
 export async function POST(request: Request) {
     try {
         const { message, searchResults, conversationHistory } = await request.json();
@@ -22,7 +30,7 @@ export async function POST(request: Request) {
 
         // Build context-aware prompt
         const resultsContext = searchResults && searchResults.length > 0
-            ? searchResults.map((r: any, i: number) =>
+            ? (searchResults as SearchResult[]).map((r, i) =>
                 `${i + 1}. ${r.title} - ${r.description}. Address: ${r.address}. Rating: ${r.rating}/5. Price: ${r.price || 'N/A'}`
             ).join('\n')
             : 'No search results available yet.';
