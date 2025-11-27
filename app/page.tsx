@@ -55,7 +55,7 @@ export default function Home() {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
-            fetch(`/api/geoip?lat=${latitude}&long=${longitude}`)
+            fetch(`/api/geoip?lat=${latitude}&long=${longitude}&t=${Date.now()}`)
               .then((res) => res.json())
               .then((data) => {
                 if (data.error) {
@@ -85,7 +85,7 @@ export default function Home() {
     }
 
     function fetchIPLocation() {
-      fetch('/api/geoip')
+      fetch(`/api/geoip?t=${Date.now()}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.error) {
@@ -448,7 +448,7 @@ export default function Home() {
       )}
       {/* Debug Info - Temporary */}
       <div className="fixed bottom-4 right-4 p-4 bg-black/80 border border-gray-800 rounded-lg text-xs font-mono text-gray-400 max-w-xs overflow-auto z-50">
-        <h4 className="text-white font-bold mb-2">Debug Info</h4>
+        <h4 className="text-white font-bold mb-2">Debug Info v2</h4>
         <pre>{JSON.stringify({
           location,
           error,
