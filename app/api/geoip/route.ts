@@ -28,12 +28,6 @@ export async function GET(request: Request) {
         const forwardedFor = request.headers.get('x-forwarded-for');
         const realIp = request.headers.get('x-real-ip');
 
-        console.log('GeoIP Debug - Headers:', {
-            forwardedFor,
-            realIp,
-            allHeaders: Object.fromEntries(request.headers.entries())
-        });
-
         // If running on Vercel or behind a proxy, x-forwarded-for is usually the best bet
         // It can be a comma-separated list, the first one is the client
         userIp = forwardedFor ? forwardedFor.split(',')[0].trim() : realIp;
@@ -42,8 +36,6 @@ export async function GET(request: Request) {
         if (userIp === '::1' || userIp === '127.0.0.1') {
             userIp = null;
         }
-
-        console.log('GeoIP Debug - Detected User IP:', userIp);
 
         let apiUrl = `https://api.ipgeolocation.io/ipgeo?apiKey=${apiKey}`;
 
@@ -71,11 +63,6 @@ export async function GET(request: Request) {
 
         const data = await response.json();
 
-        console.log('GeoIP Debug - Upstream Response:', {
-            params: { lat, long, zip, userIp },
-            data
-        });
-
         return NextResponse.json({
             ip: data.ip,
             city: data.city,
@@ -83,12 +70,6 @@ export async function GET(request: Request) {
             country: data.country_name,
             latitude: data.latitude,
             longitude: data.longitude,
-            debug: {
-                receivedParams: { lat, long, zip },
-                detectedUserIp: userIp,
-                upstreamUrl: apiUrl.replace(apiKey, 'REDACTED'),
-                headers: Object.fromEntries(request.headers.entries())
-            }
         });
     } catch (error) {
         console.error('GeoIP Error:', error);
