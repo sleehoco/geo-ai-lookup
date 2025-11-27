@@ -21,6 +21,9 @@ export async function GET(request: Request) {
         const long = searchParams.get('long');
         const zip = searchParams.get('zip');
 
+        // Initialize userIp variable
+        let userIp: string | null = null;
+
         let apiUrl = `https://api.ipgeolocation.io/ipgeo?apiKey=${apiKey}`;
 
         // If coordinates provided, use them (highest priority)
@@ -45,7 +48,7 @@ export async function GET(request: Request) {
 
             // If running on Vercel or behind a proxy, x-forwarded-for is usually the best bet
             // It can be a comma-separated list, the first one is the client
-            let userIp = forwardedFor ? forwardedFor.split(',')[0].trim() : realIp;
+            userIp = forwardedFor ? forwardedFor.split(',')[0].trim() : realIp;
 
             // Handle localhost/private IPs
             if (userIp === '::1' || userIp === '127.0.0.1') {
@@ -70,6 +73,11 @@ export async function GET(request: Request) {
 
         const data = await response.json();
 
+        console.log('GeoIP Debug - Upstream Response:', {
+            params: { lat, long, zip, userIp },
+            data
+        });
+
         return NextResponse.json({
             ip: data.ip,
             city: data.city,
@@ -78,10 +86,10 @@ export async function GET(request: Request) {
             latitude: data.latitude,
             longitude: data.longitude,
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('GeoIP Error:', error);
         return NextResponse.json(
-            { error: 'Failed to determine location' },
+            { error: error.message || 'Failed to determine location' },
             { status: 500 }
         );
     }
