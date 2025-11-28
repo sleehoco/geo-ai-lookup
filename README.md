@@ -29,8 +29,24 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Development Workflow
+
+This project uses a feature branch workflow. See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines.
+
+**Quick start for new features:**
+```bash
+# Using PowerShell (Windows)
+.\git-workflow.ps1 -Type feature -BranchName "my-feature" -CommitMessage "feat: add my feature"
+
+# Using Bash (Linux/Mac)
+./git-workflow.sh feature "my-feature" "feat: add my feature"
+```
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+- **Main branch** → Automatically deploys to production
+- **Feature branches** → Vercel creates preview deployments
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
