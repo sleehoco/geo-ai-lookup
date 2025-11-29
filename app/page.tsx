@@ -258,15 +258,15 @@ export default function Home() {
 
       setLocation({
         city: data.city,
-        region: data.state_prov,
-        country: data.country_name,
+        region: data.region,
+        country: data.country,
         ip: data.ip || 'N/A',
       });
       setLocationSource('zip');
       localStorage.setItem('userLocation', JSON.stringify({
         city: data.city,
-        region: data.state_prov,
-        country: data.country_name,
+        region: data.region,
+        country: data.country,
         ip: data.ip || 'N/A',
       }));
       localStorage.setItem('locationSource', 'zip');
@@ -296,15 +296,15 @@ export default function Home() {
 
           setLocation({
             city: data.city,
-            region: data.state_prov,
-            country: data.country_name,
+            region: data.region,
+            country: data.country,
             ip: data.ip || 'GPS',
           });
           setLocationSource('gps');
           localStorage.setItem('userLocation', JSON.stringify({
             city: data.city,
-            region: data.state_prov,
-            country: data.country_name,
+            region: data.region,
+            country: data.country,
             ip: data.ip || 'GPS',
           }));
           localStorage.setItem('locationSource', 'gps');
