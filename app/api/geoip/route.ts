@@ -24,6 +24,24 @@ export async function GET(request: Request) {
         // Initialize userIp variable
         let userIp: string | null = null;
 
+        // Check for Vercel GeoIP headers first (fastest, no external API needed)
+        const vercelCity = request.headers.get('x-vercel-ip-city');
+        const vercelCountry = request.headers.get('x-vercel-ip-country');
+        const vercelRegion = request.headers.get('x-vercel-ip-country-region');
+        const vercelLat = request.headers.get('x-vercel-ip-latitude');
+        const vercelLong = request.headers.get('x-vercel-ip-longitude');
+
+        if (vercelCity && vercelCountry) {
+            return NextResponse.json({
+                ip: request.headers.get('x-forwarded-for') || 'unknown',
+                city: decodeURIComponent(vercelCity),
+                region: vercelRegion ? decodeURIComponent(vercelRegion) : '',
+                country: vercelCountry,
+                latitude: vercelLat || '0',
+                longitude: vercelLong || '0',
+            });
+        }
+
         // Always try to detect user IP from headers
         const forwardedFor = request.headers.get('x-forwarded-for');
         const realIp = request.headers.get('x-real-ip');
@@ -58,6 +76,14 @@ export async function GET(request: Request) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('GeoIP Upstream Error:', errorText);
+
+            if (response.status === 401 || response.status === 403) {
+                return NextResponse.json(
+                    { error: 'Invalid GeoIP API Key' },
+                    { status: 500 }
+                );
+            }
+
             throw new Error(`Upstream API failed: ${response.status} ${errorText}`);
         }
 
